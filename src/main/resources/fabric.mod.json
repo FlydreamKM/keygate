@@ -1,0 +1,29 @@
+{
+	"schemaVersion": 1,
+	"id": "modgatekey",
+	"version": "${version}",
+	"name": "ModGateKey",
+	"description": "私有分发服务器密钥验证器：服务端首启生成 Ed25519 密钥对（仅存于指定文件夹，无指令/控制台读取途径），客户端凭分发的私钥完成挑战验证，不符立即踢出。",
+	"authors": [
+		"FlydreamKM"
+	],
+	"contact": {
+		"sources": "https://github.com/FlydreamKM/modgatekey"
+	},
+	"license": "GPL-3.0-or-later",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.flydreamkm.modgatekey.ModGateKey"
+		],
+		"client": [
+			"com.flydreamkm.modgatekey.client.ModGateKeyClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
