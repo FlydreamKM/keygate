@@ -1,4 +1,4 @@
-package com.flydreamkm.modgatekey;
+package com.flydreamkm.keygate;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,7 +14,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 /**
- * ModGateKey 密钥管理器
+ * KeyGate 密钥管理器
  *
  * 职责：
  *  - 服务端：首次启动在指定文件夹生成 Ed25519 密钥对（公钥+私钥）
@@ -27,7 +27,7 @@ import java.security.spec.X509EncodedKeySpec;
 public final class KeyManager {
 
     /** 密钥文件夹名（服务端运行目录 / 客户端游戏目录下的同名文件夹） */
-    public static final String KEY_DIR_NAME = "modgatekey";
+    public static final String KEY_DIR_NAME = "keygate";
     public static final String PRIVATE_KEY_FILE = "private_key.bin";
     public static final String PUBLIC_KEY_FILE = "public_key.bin";
 
@@ -43,7 +43,7 @@ public final class KeyManager {
         Path priv = dir.resolve(PRIVATE_KEY_FILE);
         Path pub = dir.resolve(PUBLIC_KEY_FILE);
         if (Files.exists(priv) && Files.exists(pub)) {
-            ModGateKey.LOGGER.info("[ModGateKey] 已加载既有密钥对: {}", dir);
+            KeyGate.LOGGER.info("[KeyGate] 已加载既有密钥对: {}", dir);
             return;
         }
         try {
@@ -56,7 +56,7 @@ public final class KeyManager {
                 priv.toFile().setReadable(false, false);
                 priv.toFile().setReadable(true, true);
             } catch (Exception ignored) {}
-            ModGateKey.LOGGER.info("[ModGateKey] 首次启动，已生成新密钥对: {}", dir);
+            KeyGate.LOGGER.info("[KeyGate] 首次启动，已生成新密钥对: {}", dir);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("当前 JVM 不支持 Ed25519", e);
         }
@@ -69,7 +69,7 @@ public final class KeyManager {
     public static void ensureClientFolder(Path gameDir) throws IOException {
         Path dir = gameDir.resolve(KEY_DIR_NAME);
         Files.createDirectories(dir);
-        ModGateKey.LOGGER.info("[ModGateKey] 客户端密钥文件夹: {} (请将服务器分发的 {} 放入此目录)", dir, PRIVATE_KEY_FILE);
+        KeyGate.LOGGER.info("[KeyGate] 客户端密钥文件夹: {} (请将服务器分发的 {} 放入此目录)", dir, PRIVATE_KEY_FILE);
     }
 
     /** 读取服务端公钥（验签用） */
@@ -78,7 +78,7 @@ public final class KeyManager {
             byte[] raw = Files.readAllBytes(gameDir.resolve(KEY_DIR_NAME).resolve(PUBLIC_KEY_FILE));
             return KeyFactory.getInstance("Ed25519").generatePublic(new X509EncodedKeySpec(raw));
         } catch (Exception e) {
-            ModGateKey.LOGGER.error("[ModGateKey] 无法读取服务端公钥", e);
+            KeyGate.LOGGER.error("[KeyGate] 无法读取服务端公钥", e);
             return null;
         }
     }
@@ -93,7 +93,7 @@ public final class KeyManager {
             byte[] raw = Files.readAllBytes(priv);
             return KeyFactory.getInstance("Ed25519").generatePrivate(new PKCS8EncodedKeySpec(raw));
         } catch (Exception e) {
-            ModGateKey.LOGGER.error("[ModGateKey] 私钥文件损坏或格式错误: {}", priv, e);
+            KeyGate.LOGGER.error("[KeyGate] 私钥文件损坏或格式错误: {}", priv, e);
             return null;
         }
     }

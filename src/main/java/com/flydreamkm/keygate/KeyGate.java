@@ -1,7 +1,7 @@
-package com.flydreamkm.modgatekey;
+package com.flydreamkm.keygate;
 
-import com.flydreamkm.modgatekey.payload.AuthChallengePayload;
-import com.flydreamkm.modgatekey.payload.AuthResponsePayload;
+import com.flydreamkm.keygate.payload.AuthChallengePayload;
+import com.flydreamkm.keygate.payload.AuthResponsePayload;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -24,7 +24,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ModGateKey 服务端入口 —— 私有分发服务器密钥验证器
+ * KeyGate 服务端入口 —— 私有分发服务器密钥验证器
  *
  * 工作流程（dedicated server 才启用，单人/集成服务器自动跳过）：
  *  1. 玩家连接建立（PLAY 阶段进入）→ 服务端下发 32 字节随机挑战 nonce
@@ -32,13 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
  *  3. 服务端用公钥验签：
  *     - 验签失败 → 立刻踢出（无任何延迟/宽限）
  *     - 超时未响应（没装 MOD / 没放私钥）→ 到点立刻踢出
- *  4. 密钥只存放在服务器 modgatekey/ 文件夹，本 MOD 不注册任何指令，
+ *  4. 密钥只存放在服务器 keygate/ 文件夹，本 MOD 不注册任何指令，
  *     不存在经指令或控制台读取密钥的途径。
  */
-public class ModGateKey implements ModInitializer {
+public class KeyGate implements ModInitializer {
 
-    public static final String MOD_ID = "modgatekey";
-    public static final Logger LOGGER = LoggerFactory.getLogger("ModGateKey");
+    public static final String MOD_ID = "keygate";
+    public static final Logger LOGGER = LoggerFactory.getLogger("KeyGate");
 
     /** 等待客户端响应的最长毫秒数（超时视为验证失败，立即踢出） */
     private static final long AUTH_TIMEOUT_MS = 3000;
@@ -60,7 +60,7 @@ public class ModGateKey implements ModInitializer {
 
         // 仅专用服务器启用验证逻辑
         if (FabricLoader.getInstance().getEnvironmentType() != EnvType.SERVER) {
-            LOGGER.info("[ModGateKey] 非专用服务器环境，验证器不启用");
+            LOGGER.info("[KeyGate] 非专用服务器环境，验证器不启用");
             return;
         }
 
@@ -70,12 +70,12 @@ public class ModGateKey implements ModInitializer {
         try {
             KeyManager.ensureServerKeyPair(gameDir);
         } catch (IOException e) {
-            LOGGER.error("[ModGateKey] 密钥对初始化失败，验证器将无法工作！", e);
+            LOGGER.error("[KeyGate] 密钥对初始化失败，验证器将无法工作！", e);
             return;
         }
         serverPublicKey = KeyManager.loadServerPublicKey(gameDir);
         if (serverPublicKey == null) {
-            LOGGER.error("[ModGateKey] 公钥加载失败，验证器将无法工作！");
+            LOGGER.error("[KeyGate] 公钥加载失败，验证器将无法工作！");
             return;
         }
 
@@ -86,7 +86,7 @@ public class ModGateKey implements ModInitializer {
             UUID uuid = handler.getPlayer().getUUID();
             PENDING.put(uuid, new PendingAuth(nonce, System.currentTimeMillis() + AUTH_TIMEOUT_MS));
             ServerPlayNetworking.send(handler.getPlayer(), new AuthChallengePayload(nonce));
-            LOGGER.info("[ModGateKey] 已向 {} 下发验证挑战", handler.getPlayer().getName().getString());
+            LOGGER.info("[KeyGate] 已向 {} 下发验证挑战", handler.getPlayer().getName().getString());
         });
 
         // 收到客户端签名 → 立即验签，不符直接踢
@@ -97,17 +97,17 @@ public class ModGateKey implements ModInitializer {
                 if (pending == null) {
                     // 没有待验证记录却收到响应（重放/异常）→ 踢
                     context.player().connection.disconnect(
-                            Component.literal("[ModGateKey] 验证状态异常，连接被拒绝"));
+                            Component.literal("[KeyGate] 验证状态异常，连接被拒绝"));
                     return;
                 }
                 boolean ok = KeyManager.verify(serverPublicKey, pending.nonce(), payload.signature());
                 if (!ok) {
-                    LOGGER.warn("[ModGateKey] {} 验证失败（签名不符），已踢出",
+                    LOGGER.warn("[KeyGate] {} 验证失败（签名不符），已踢出",
                             context.player().getName().getString());
                     context.player().connection.disconnect(
-                            Component.literal("[ModGateKey] 密钥验证失败，连接被拒绝"));
+                            Component.literal("[KeyGate] 密钥验证失败，连接被拒绝"));
                 } else {
-                    LOGGER.info("[ModGateKey] {} 验证通过",
+                    LOGGER.info("[KeyGate] {} 验证通过",
                             context.player().getName().getString());
                 }
             });
@@ -127,15 +127,15 @@ public class ModGateKey implements ModInitializer {
                     it.remove();
                     var player = server.getPlayerList().getPlayer(entry.getKey());
                     if (player != null) {
-                        LOGGER.warn("[ModGateKey] {} 验证超时（未安装 MOD 或未放入私钥），已踢出",
+                        LOGGER.warn("[KeyGate] {} 验证超时（未安装 MOD 或未放入私钥），已踢出",
                                 player.getName().getString());
                         player.connection.disconnect(
-                                Component.literal("[ModGateKey] 验证超时：未安装 ModGateKey 或未放入私钥文件"));
+                                Component.literal("[KeyGate] 验证超时：未安装 KeyGate 或未放入私钥文件"));
                     }
                 }
             }
         });
 
-        LOGGER.info("[ModGateKey] 验证器已启用 (超时 {}ms)", AUTH_TIMEOUT_MS);
+        LOGGER.info("[KeyGate] 验证器已启用 (超时 {}ms)", AUTH_TIMEOUT_MS);
     }
 }

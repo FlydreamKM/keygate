@@ -1,4 +1,4 @@
-package com.flydreamkm.modgatekey.payload;
+package com.flydreamkm.keygate.payload;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -11,7 +11,7 @@ import net.minecraft.resources.Identifier;
 public record AuthResponsePayload(byte[] signature) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<AuthResponsePayload> ID =
-            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("modgatekey", "auth_response"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("keygate", "auth_response"));
 
     public static final StreamCodec<FriendlyByteBuf, AuthResponsePayload> CODEC = StreamCodec.of(
             (buf, value) -> buf.writeByteArray(value.signature),
