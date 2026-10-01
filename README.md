@@ -70,8 +70,14 @@ CI 构建：每次 push 自动触发 GitHub Actions，产物在 Actions 运行�
 `KeyGate.java` 中的常量：
 
 ```java
-private static final long AUTH_TIMEOUT_MS = 3000;  // 挑战响应超时
+private static final long AUTH_TIMEOUT_MS = 3000;      // 挑战响应超时
+private static final String KICK_MESSAGE = "Disconnected";  // 踢出文案（见下）
 ```
+
+### 踢出文案策略（v1.2.0 起）
+
+玩家被踢时只看到与原版无异的 `Disconnected`，**不暴露验证机制的存在**（防指纹探测）；
+签名不符 / 超时 / 状态异常的具体原因只写入**服务端日志**（仅管理员可见）。
 
 ## License
 

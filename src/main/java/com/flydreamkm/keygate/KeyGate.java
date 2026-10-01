@@ -43,6 +43,13 @@ public class KeyGate implements ModInitializer {
     /** 等待客户端响应的最长毫秒数（超时视为验证失败，立即踢出） */
     private static final long AUTH_TIMEOUT_MS = 3000;
 
+    /**
+     * 踢出文案（v1.2.0 起通用化）：
+     * 刻意使用与原版无异的模糊文案，不暴露验证机制的存在；
+     * 详细原因只记录到服务端日志（仅管理员可见）。
+     */
+    private static final String KICK_MESSAGE = "Disconnected";
+
     private static final SecureRandom RANDOM = new SecureRandom();
 
     /** 待验证连接：玩家 UUID -> 挑战信息 */
@@ -97,7 +104,7 @@ public class KeyGate implements ModInitializer {
                 if (pending == null) {
                     // 没有待验证记录却收到响应（重放/异常）→ 踢
                     context.player().connection.disconnect(
-                            Component.literal("[KeyGate] 验证状态异常，连接被拒绝"));
+                            Component.literal(KICK_MESSAGE));
                     return;
                 }
                 boolean ok = KeyManager.verify(serverPublicKey, pending.nonce(), payload.signature());
@@ -105,7 +112,7 @@ public class KeyGate implements ModInitializer {
                     LOGGER.warn("[KeyGate] {} 验证失败（签名不符），已踢出",
                             context.player().getName().getString());
                     context.player().connection.disconnect(
-                            Component.literal("[KeyGate] 密钥验证失败，连接被拒绝"));
+                            Component.literal(KICK_MESSAGE));
                 } else {
                     LOGGER.info("[KeyGate] {} 验证通过",
                             context.player().getName().getString());
@@ -130,7 +137,7 @@ public class KeyGate implements ModInitializer {
                         LOGGER.warn("[KeyGate] {} 验证超时（未安装 MOD 或未放入私钥），已踢出",
                                 player.getName().getString());
                         player.connection.disconnect(
-                                Component.literal("[KeyGate] 验证超时：未安装 KeyGate 或未放入私钥文件"));
+                                Component.literal(KICK_MESSAGE));
                     }
                 }
             }
